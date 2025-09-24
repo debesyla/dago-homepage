@@ -1,0 +1,85 @@
+@use "variables" as *;
+
+/* dago.lt */
+body {
+  background: $black;
+  color: $theme;
+  margin: 0 auto 0 0;
+  padding: var(--2xl) var(--lg) var(--3xl);
+  font-family: monospace, 'Courier New', Courier, sans-serif;
+  max-width: 75ch;
+}
+
+a {
+  text-underline-offset: var(--xs);
+
+  &:hover,
+  &:focus {
+    text-decoration-style: dashed;
+  }
+}
+
+ul, ol {
+  padding-left: var(--lg);
+
+  li {
+    & + li {
+      margin-top: var(--md);
+    }
+
+    &::marker {
+      color: rgba($theme, 0.325);
+    }
+  }
+}
+
+ol {
+  li::marker {
+    font-size: 0.75em;
+  }
+}
+
+::selection {
+  background: $theme;
+  color: $black;
+}
+
+/* content */
+#content {
+  & > * + * {
+    margin-top: var(--md);
+  }
+
+  // .md viduje lengviau editinti kaip ul, outputas tegul atrodo kaip ol
+  > ul {
+    padding-top: var(--md);
+    list-style-type: decimal;
+
+    li::marker {
+      font-size: 0.75em;
+    }
+  }
+}
+
+#colophon {
+  margin-top: var(--2xl);
+}
+
+
+
+body > main {
+  margin-bottom: 2em;
+}
+
+body > aside {
+  margin-bottom: 4em;
+
+  & > ul {
+    column-count: 1;
+    column-gap: 2.5em;
+
+    @include desktop {
+      column-count: 2; 
+    }
+  }
+}
