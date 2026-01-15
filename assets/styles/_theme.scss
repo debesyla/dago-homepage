@@ -39,6 +39,10 @@ ol {
   }
 }
 
+li > ul {
+  margin-top: var(--md);
+}
+
 ::selection {
   background: $theme;
   color: $black;
@@ -74,12 +78,12 @@ body > main {
 body > aside {
   margin-bottom: 4em;
 
-  & > ul {
-    column-count: 1;
-    column-gap: 2.5em;
+  // & > ul {
+  //   column-count: 1;
+  //   column-gap: 2.5em;
 
-    @include desktop {
-      column-count: 2; 
-    }
-  }
+  //   @include desktop {
+  //     column-count: 2;
+  //   }
+  // }
 }
