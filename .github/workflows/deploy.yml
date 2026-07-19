@@ -79,6 +79,23 @@ jobs:
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
+
+          # Check the variables, not the files they land in. `printf '%s\n' ""`
+          # writes a one-byte newline, so a `test -s` on the written file passes
+          # for an empty secret and the emptiness check it looks like never
+          # fires. An unset secret then surfaces two steps later as an opaque
+          # host-key rejection that the marker guard misreports as a missing
+          # marker file. set -u does not help here: Actions binds the name via
+          # env:, so the variable is defined, merely empty.
+          test -n "${DEPLOY_SSH_KEY:-}" \
+            || { echo "::error::DEPLOY_SSH_KEY secret is empty or unset"; exit 1; }
+          test -n "${SSH_KNOWN_HOSTS:-}" \
+            || { echo "::error::SSH_KNOWN_HOSTS secret is empty or unset"; exit 1; }
+          for v in SSH_HOST SSH_USER SSH_PORT; do
+            eval "val=\${$v:-}"
+            test -n "$val" || { echo "::error::$v secret is empty or unset"; exit 1; }
+          done
+
           install -d -m 700 ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
@@ -90,8 +107,6 @@ jobs:
           # and update the secret; never set StrictHostKeyChecking=no.
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
-          test -s ~/.ssh/known_hosts \
-            || { echo "::error::SSH_KNOWN_HOSTS secret is empty"; exit 1; }
 
           cat > ~/.ssh/config <<EOF
           Host deploy-target
