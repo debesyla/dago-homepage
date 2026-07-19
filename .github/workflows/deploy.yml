@@ -1,0 +1,175 @@
+name: Deploy
+
+# Push to main → build the stylesheet → rsync the static site over SSH.
+#
+# All host, port and path details come from the `production` environment
+# secrets, so nothing about the server is recorded in this repo.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-homepage
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    env:
+      MARKER: .deploy-marker-homepage
+      SITE: https://dago.lt
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build staging tree
+        run: |
+          set -euo pipefail
+          rm -rf _deploy
+          mkdir -p _deploy/assets/styles _deploy/assets/img
+
+          # git archive ships only committed files, so untracked worktree cruft
+          # can never leak into a deploy. The compiled stylesheet is the one
+          # exception: it is gitignored, so it is built and copied in below.
+          git archive "$GITHUB_SHA:assets/img" | tar -x -C _deploy/assets/img
+          git show "$GITHUB_SHA:index.html" > _deploy/index.html
+          git show "$GITHUB_SHA:.htaccess"  > _deploy/.htaccess
+          git show "$GITHUB_SHA:assets/styles/dago.css" > _deploy/assets/styles/dago.css
+
+          npm run build:tailwind
+          cp assets/styles/tailwind.css _deploy/assets/styles/tailwind.css
+
+          # Served at $SITE/assets/BUILD via the existing /assets/* rewrite.
+          printf '%s\n' "$GITHUB_SHA" > _deploy/assets/BUILD
+
+          # Tailwind v4 exits 0 and emits a valid-but-useless stylesheet if it
+          # fails to find index.html, so "the file exists" is not enough —
+          # assert on the utilities the layout actually depends on.
+          for token in subgrid column-count 75ch space-y-12; do
+            grep -q "$token" _deploy/assets/styles/tailwind.css \
+              || { echo "::error::built tailwind.css is missing '$token' — source detection broke"; exit 1; }
+          done
+
+          for f in .htaccess index.html assets/styles/dago.css \
+                   assets/styles/tailwind.css assets/img/dago-icon.png assets/BUILD; do
+            test -f "_deploy/$f" || { echo "::error::missing $f"; exit 1; }
+          done
+
+          echo "--- artifact ---"
+          find _deploy -type f | sort
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Host keys are pinned from a secret rather than ssh-keyscan'd at
+          # runtime: keyscanning would be trust-on-first-use on every run, i.e.
+          # no MITM protection at all. If the host is ever migrated this step
+          # starts failing — that failure is CORRECT. Re-verify the fingerprint
+          # and update the secret; never set StrictHostKeyChecking=no.
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          test -s ~/.ssh/known_hosts \
+            || { echo "::error::SSH_KNOWN_HOSTS secret is empty"; exit 1; }
+
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            BatchMode yes
+            ConnectTimeout 20
+          EOF
+          chmod 600 ~/.ssh/config
+
+      # Refuses to run --delete against anything but the directory that was
+      # marked by hand. This is the guard against a target-path typo deleting
+      # a sibling project.
+      - name: Guard — target marker must exist
+        env:
+          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+        run: |
+          ssh deploy-target "test -f '$REMOTE_DIR/$MARKER'" \
+            || { echo "::error::$MARKER not found in target — refusing to deploy"; exit 1; }
+
+      - name: Dry run
+        env:
+          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+        run: |
+          rsync -a --checksum --delete --itemize-changes --dry-run \
+            --exclude "$MARKER" \
+            --exclude '.well-known/' \
+            -e "ssh -F $HOME/.ssh/config" \
+            _deploy/ "deploy-target:$REMOTE_DIR/"
+
+      - name: Deploy
+        env:
+          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+        run: |
+          # --checksum is required, not cosmetic: actions/checkout stamps every
+          # file's mtime with checkout time, so without it rsync re-transfers
+          # every file on every run.
+          rsync -a --checksum --delete --itemize-changes \
+            --exclude "$MARKER" \
+            --exclude '.well-known/' \
+            -e "ssh -F $HOME/.ssh/config" \
+            _deploy/ "deploy-target:$REMOTE_DIR/"
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          sleep 2
+
+          # 1. Proves the bytes reached the live document root. rsync CREATES a
+          #    missing destination rather than failing, so a mistyped target
+          #    gives a green rsync AND a green homepage (the old files are
+          #    untouched and still serving) with the site frozen forever.
+          #    This is the only assertion that catches that.
+          got="$(curl -fsS --max-time 20 "$SITE/assets/BUILD")"
+          test "$got" = "$GITHUB_SHA" \
+            || { echo "::error::live BUILD=$got, expected $GITHUB_SHA"; exit 1; }
+
+          # 2. The homepage itself renders.
+          curl -fsS --max-time 20 "$SITE/" -o /tmp/index.html
+          grep -q 'danielius goriunovas' /tmp/index.html \
+            || { echo "::error::homepage did not serve expected content"; exit 1; }
+
+          # 3. The stylesheet the layout depends on is live and complete.
+          #    Write to a file first: `curl | grep -q` SIGPIPEs curl under
+          #    pipefail and reddens good deploys.
+          curl -fsS --max-time 20 "$SITE/assets/styles/tailwind.css" -o /tmp/tw.css
+          grep -q 'subgrid' /tmp/tw.css \
+            || { echo "::error::live tailwind.css is missing layout utilities"; exit 1; }
+
+          # 4. .htaccess landed — without it the folder is reachable as a
+          #    duplicate of the site instead of redirecting.
+          code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE/homepage/")"
+          test "$code" = "301" \
+            || { echo "::error::/homepage/ returned $code, expected 301 — .htaccess missing?"; exit 1; }
+
+          echo "Deployed $GITHUB_SHA"

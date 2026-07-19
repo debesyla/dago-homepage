@@ -1,0 +1,99 @@
+# Ships with the site, one level below the document root.
+#
+# The parent rewrites  /  -> homepage/index.html  and  /assets/*  ->
+# homepage/assets/*, so this directory is the live tree and "homepage" never
+# appears in a URL. The deploy uploads an explicit file list, so no build
+# inputs and no repo metadata are published — the denies below are defense in
+# depth, not the primary control.
+
+# No directory listings. Also no MultiViews: content negotiation resolves in
+# the type-check phase, before mod_rewrite's fixup hook, and would let
+# /assets/styles/dago quietly serve dago.css.
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # --- Deny git metadata, whatever path was used to reach it. -------------
+    # The deploy clears any stale .git/ on its first run, so this is cleanup
+    # insurance for the window before that and for anything restored from a
+    # backup.
+    # <Files> matches BASENAMES only, so ".git/config" (basename "config")
+    # slips straight past it, and <Directory> is illegal in .htaccess. A
+    # RewriteRule pattern matches the whole per-directory path, so this is the
+    # only correct tool for denying a subtree. Kept first so nothing below
+    # can shadow it.
+    RewriteRule (^|/)\.git(/|$) - [F,L,NC]
+
+    # --- /homepage/ is an implementation detail, not a public address. ------
+    # %{THE_REQUEST} is the verbatim original request line and is NOT touched
+    # by the parent's internal redirects. So these rules see "/homepage/" only
+    # when a visitor actually typed it — they cannot fire on / or /assets/*,
+    # and they cannot loop. The patterns themselves are relative to THIS dir.
+
+    # /homepage/ and /homepage/index.html -> /
+    RewriteCond %{THE_REQUEST} \s/+homepage(/|\s|\?) [NC]
+    RewriteRule ^(index\.html)?$ / [R=301,L]
+
+    # /homepage/assets/... -> the clean /assets/... URL
+    RewriteCond %{THE_REQUEST} \s/+homepage/ [NC]
+    RewriteRule ^(assets/.*)$ /$1 [R=301,L]
+
+    # Anything else under /homepage/ -> 404. Deliberately not a 301: sending
+    # /homepage/foo to a nonexistent /foo is a redirect chain ending in 404,
+    # which is strictly worse than answering 404 directly.
+    RewriteCond %{THE_REQUEST} \s/+homepage/ [NC]
+    RewriteRule ^ - [R=404,L]
+</IfModule>
+
+# Build inputs and repo metadata are not in the deploy artifact, so this
+# matches nothing today. It is here so a future change to the workflow's file
+# list cannot silently start serving them. Deliberately does NOT match *.css:
+# dago.css and tailwind.css must keep serving.
+<FilesMatch "(?i)^(package(-lock)?\.json|README\.md|\.gitignore|\.gitattributes|\.DS_Store|tailwind\.input\.css|.*\.scss)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # The ?v= cache-busting stamp lives inside index.html, so the HTML itself
+    # must always revalidate or a bumped stamp never reaches a returning
+    # visitor.
+    <FilesMatch "\.html$">
+        Header always set Cache-Control "no-cache"
+    </FilesMatch>
+
+    # The deploy's BUILD stamp must never be cached, or the smoke test reads a
+    # stale SHA from an edge cache and passes a deploy that never landed.
+    <Files "BUILD">
+        Header always set Cache-Control "no-store"
+    </Files>
+
+    # CSS is versioned by query string, not by filename, so the URL is reused
+    # across content changes. Deliberately NOT "immutable" — that suppresses
+    # revalidation even on an explicit reload, so a single forgotten ?v= bump
+    # would strand a stale stylesheet with no way for a visitor to recover.
+    <FilesMatch "\.css$">
+        Header always set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+
+    <FilesMatch "\.(png|ico|svg|webp|woff2)$">
+        Header always set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Matches the page as it stands: no <script>, no inline style=, no
+    # @font-face, all images and stylesheets same-origin. frame-ancestors
+    # supersedes X-Frame-Options in current browsers, so only one is set.
+    # NOTE: default-src 'none' will silently block any analytics snippet,
+    # embedded font or external script added later — widen it in the same
+    # commit that adds one.
+    Header always set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+</IfModule>
