@@ -1,9 +1,19 @@
+:root {
+    /* HSL channels: H S% L% */
+    --theme: 45 100% 50%;
+    /* #FFBF00 */
+    --black: 0 0% 13%;
+    /* #222 */
+}
+
 body {
-    background: var(--black, #222);
-    color: var(--theme, #FFBF00);
+    background: hsl(var(--black, #222));
+    color: hsl(var(--theme, #FFBF00));
     margin: 0 auto 0 0;
     padding: 2em 1em;
     font-family: monospace, "Courier New", Courier, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
 }
 
 * {
@@ -11,8 +21,8 @@ body {
 }
 
 ::selection {
-    background: var(--theme, #FFBF00);
-    color: var(--black, #222);
+    background: hsl(var(--theme, #FFBF00));
+    color: hsl(var(--black, #222));
 }
 
 h1,
@@ -21,7 +31,7 @@ h3,
 h4,
 h5,
 h6 {
-    color: var(--theme, #FFBF00);
+    color: hsl(var(--theme, #FFBF00));
     font-family: monospace, "Courier New", Courier, sans-serif;
     font-weight: bolder;
     line-height: 1.25;
@@ -43,7 +53,7 @@ h6 {
 }
 
 h1 {
-    font-size: 2em;
+    font-size: 1.75em;
 }
 
 h2 {
@@ -61,11 +71,11 @@ ol {
 
     li {
         &+li {
-            margin-top: 0.25em;
+            margin-top: 0.375em;
         }
 
         &::marker {
-            color: rgba(var(--theme, #FFBF00), 0.325);
+            color: hsl(var(--theme, #FFBF00) / 0.325);
         }
     }
 }
@@ -80,7 +90,9 @@ ol {
 
 a {
     text-decoration: underline;
-    text-underline-offset: var(--xs);
+    text-underline-offset: 0.125em;
+    text-decoration-color: hsl(var(--theme, #FFBF00) / 0.5);
+    text-decoration-thickness: 0.125em;
 
     &:hover,
     &:focus {
