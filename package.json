@@ -1,0 +1,28 @@
+{
+  "name": "dago-homepage",
+  "version": "1.0.0",
+  "description": "/root of personal sites",
+  "main": "index.js",
+  "scripts": {
+    "build:tailwind": "npx @tailwindcss/cli -i ./assets/styles/tailwind.input.css -o ./assets/styles/tailwind.css --minify",
+    "watch:tailwind": "npx @tailwindcss/cli -i ./assets/styles/tailwind.input.css -o ./assets/styles/tailwind.css --watch",
+    "dev": "npm run watch:tailwind",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Debesyla/dago-homepage.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Debesyla/dago-homepage/issues"
+  },
+  "homepage": "https://github.com/Debesyla/dago-homepage#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}
