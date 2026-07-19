@@ -1,1 +1,8 @@
-@import "tailwindcss";
+/* Sources are declared explicitly. Tailwind v4's automatic source detection is
+   rooted at the process CWD, not at this file — so running the build from any
+   directory other than the repo root exits 0 and emits a valid stylesheet with
+   none of the page's layout utilities in it. source(none) turns that scan off;
+   @source below resolves relative to THIS file, so the build is cwd-independent.
+   Add a line here if a second HTML page is ever introduced. */
+@import "tailwindcss" source(none);
+@source "../../index.html";
