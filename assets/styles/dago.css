@@ -89,6 +89,7 @@ ol {
 }
 
 a {
+    color: inherit;
     text-decoration: underline;
     text-underline-offset: 0.125em;
     text-decoration-color: hsl(var(--theme, #FFBF00) / 0.5);
