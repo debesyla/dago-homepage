@@ -1,28 +1,32 @@
+/*
+ * dago.css
+ * updated: 20260803
+**/
 :root {
-    /* HSL channels: H S% L% */
-    --theme: 45 100% 50%;
-    /* #FFBF00 */
-    --black: 0 0% 13%;
-    /* #222 */
+	/* HSL channels: H S% L% */
+	--theme: 45 100% 50%;
+	/* #FFBF00 */
+	--black: 0 0% 13%;
+	/* #222 */
 }
 
 body {
-    background: hsl(var(--black, #222));
-    color: hsl(var(--theme, #FFBF00));
-    margin: 0 auto 0 0;
-    padding: 2em 1em;
-    font-family: monospace, "Courier New", Courier, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
+	background: hsl(var(--black, #222));
+	color: hsl(var(--theme, #ffbf00));
+	margin: 0 auto 0 0;
+	padding: 2em 1em;
+	font-family: monospace, "Courier New", Courier, sans-serif;
+	font-size: 16px;
+	line-height: 1.5;
 }
 
 * {
-    gap: 1em 2em;
+	gap: 1em 2em;
 }
 
 ::selection {
-    background: hsl(var(--theme, #FFBF00));
-    color: hsl(var(--black, #222));
+	background: hsl(var(--theme, #ffbf00));
+	color: hsl(var(--black, #222));
 }
 
 h1,
@@ -31,72 +35,72 @@ h3,
 h4,
 h5,
 h6 {
-    color: hsl(var(--theme, #FFBF00));
-    font-family: monospace, "Courier New", Courier, sans-serif;
-    font-weight: bolder;
-    line-height: 1.25;
-    margin-top: 1em;
-    margin-bottom: 0.5em;
+	color: hsl(var(--theme, #ffbf00));
+	font-family: monospace, "Courier New", Courier, sans-serif;
+	font-weight: bolder;
+	line-height: 1.25;
+	margin-top: 1em;
+	margin-bottom: 0.5em;
 
-    &:first-child {
-        margin-top: 0;
-    }
+	&:first-child {
+		margin-top: 0;
+	}
 
-    &:last-child {
-        margin-bottom: 0;
-    }
+	&:last-child {
+		margin-bottom: 0;
+	}
 
-    &:only-child {
-        margin-top: 0;
-        margin-bottom: 0;
-    }
+	&:only-child {
+		margin-top: 0;
+		margin-bottom: 0;
+	}
 }
 
 h1 {
-    font-size: 1.75em;
+	font-size: 1.75em;
 }
 
 h2 {
-    font-size: 1.5em;
+	font-size: 1.5em;
 }
 
 h3 {
-    font-size: 1.25em;
+	font-size: 1.25em;
 }
 
 ul,
 ol {
-    padding-left: 1.5em;
-    list-style-type: disc;
+	padding-left: 1.5em;
+	list-style-type: disc;
 
-    li {
-        &+li {
-            margin-top: 0.375em;
-        }
+	li {
+		& + li {
+			margin-top: 0.375em;
+		}
 
-        &::marker {
-            color: hsl(var(--theme, #FFBF00) / 0.325);
-        }
-    }
+		&::marker {
+			color: hsl(var(--theme, #ffbf00) / 0.325);
+		}
+	}
 }
 
 ol {
-    list-style-type: decimal;
+	list-style-type: decimal;
 
-    li::marker {
-        font-size: 0.75em;
-    }
+	li::marker {
+		font-size: 0.75em;
+	}
 }
 
 a {
-    color: inherit;
-    text-decoration: underline;
-    text-underline-offset: 0.125em;
-    text-decoration-color: hsl(var(--theme, #FFBF00) / 0.5);
-    text-decoration-thickness: 0.125em;
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 0.125em;
+	text-decoration-color: hsl(var(--theme, #ffbf00) / 0.5);
+	text-decoration-thickness: 0.125em;
 
-    &:hover,
-    &:focus {
-        text-decoration-style: dashed;
-    }
+	&:hover,
+	&:focus {
+		text-decoration-style: dashed;
+	}
 }
