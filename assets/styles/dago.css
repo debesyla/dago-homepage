@@ -92,6 +92,10 @@ ol {
 	}
 }
 
+:where(p, ul, ol) + :is(p, ul, ol) {
+	margin-top: 1.25em;
+}
+
 a {
 	color: inherit;
 	text-decoration: underline;
@@ -103,4 +107,62 @@ a {
 	&:focus {
 		text-decoration-style: dashed;
 	}
+}
+
+@media print {
+	:root {
+		--theme: 0 0% 0%;
+		--black: 0 0% 100%;
+	}
+
+	*,
+    *::before,
+    *::after {
+        background: transparent!important;
+        box-shadow: none!important;
+        text-shadow: none!important;
+    }
+
+	a {
+		text-decoration: none;
+	}
+
+	/* Show URLs in print */
+	a[href]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.75em;
+        word-wrap: break-word; /* Prevents long URLs from overflowing the page */
+    }
+	a[href].print-a-no-link::after,
+	a[href^="#"]::after,
+    a[href^="javascript:"]::after {
+        content: "";
+    }
+
+	/* Avoid page breaks inside certain elements, do not split them across pages */
+	blockquote, pre, img, tr, figure, li {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+	h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+	/* Control orphans and widows */
+	p, h1, h2, h3, h4, h5, h6 {
+		orphans: 3;
+		widows: 3;
+	}
+
+	/* Limit overflow */
+	img, svg {
+        max-width: 100%!important;
+    }
+
+	/* Set page margins for printing */
+	@page {
+		size: A4;
+        margin: 1cm;
+    }
 }

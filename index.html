@@ -19,13 +19,13 @@
 <body>
 	<main id="content"
 		class="grid grid-cols-1 lg:grid-cols-[75ch_1fr] space-y-12 grid-flow-dense [&>section]:grid [&>section]:grid-cols-subgrid [&>section]:grid-flow-dense">
-		<header class="lg:col-span-2 mb-8">
+		<header class="lg:col-span-2 mb-8 print:mb-0!">
 			<h1>
 				danielius goriunovas <span class="opacity-20 text-nowrap">// dago</span>
 			</h1>
 		</header>
 
-		<section id="projektai" class="content__section lg:col-span-2">
+		<section id="projektai" class="content__section lg:col-span-2 print:hidden!">
 			<h2 class="lg:col-start-2 m-0! opacity-20">
 				// Projektai
 			</h2>
@@ -57,7 +57,7 @@
 			</div>
 		</section>
 
-		<section id="archyvas" class="content__section lg:col-span-2">
+		<section id="archyvas" class="content__section lg:col-span-2 print:hidden!">
 			<h2 class="lg:col-start-2 m-0! opacity-20">
 				// Archyvas
 			</h2>
@@ -169,7 +169,7 @@
 			</div>
 		</section>
 
-		<section id="platformos" class="content__section lg:col-span-2">
+		<section id="platformos" class="content__section lg:col-span-2 print:hidden!">
 			<h2 class="lg:col-start-2 m-0! opacity-20">
 				// Kontaktai
 			</h2>
@@ -198,10 +198,27 @@
 			</div>
 		</section>
 
+		<section id="cv" class="content__section lg:col-span-2 not-print:hidden! print:mb-2!">
+			<div class="content__section__body">
+				<p>
+					Dirbu prie kompų ir su intiku.<br> 
+					<span class="text-sm"><strong>labas<span class="before:content-['@']"></span>dago.lt</strong>, 10:00–22:00</span>
+				</p>
+
+				<ul class="text-sm">
+					<li>2011–2015: KTU, Statybos inžinerija;</li>
+					<li>2009–2014: draudimo agentas;</li>
+					<li>2012–2021: tinklaraščiai, knygos, portalai, mokymai, marketingas ir SEO (Debesyla.lt)</li>
+					<li>2015–šiandien: freelance web specialist;</li>
+					<li>2018–šiandien: tech lead, dabar jau senior, įvairios agentūros;</li>
+					<li>Esu atviras.</li>
+				</ul>
+			</div>
+		</section>
+
 		<footer>
-			<a href="https://notbyai.fyi" target="_blank">
-				<img src="assets/img/notbyai.png" srcset="assets/img/notbyai.png 1x, assets/img/notbyai@2x.png 2x"
-					alt="Sukūrė žmogus, ne DI" width="132" height="43" />
+			<a href="https://notbyai.fyi" target="_blank" class="print-a-no-link">
+				<img src="assets/img/notbyai.png" srcset="assets/img/notbyai.png 1x, assets/img/notbyai@2x.png 2x" alt="Sukūrė žmogus, ne DI" width="132" height="43" />
 			</a>
 		</footer>
 	</main>
