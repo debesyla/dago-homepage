@@ -74,11 +74,11 @@ Options -Indexes -MultiViews
         Header always set Cache-Control "no-store"
     </Files>
 
-    # CSS is versioned by query string, not by filename, so the URL is reused
-    # across content changes. Deliberately NOT "immutable" — that suppresses
+    # CSS and JS are versioned by query string, not by filename, so the URL is
+    # reused across content changes. Deliberately NOT "immutable" — that suppresses
     # revalidation even on an explicit reload, so a single forgotten ?v= bump
     # would strand a stale stylesheet with no way for a visitor to recover.
-    <FilesMatch "\.css$">
+    <FilesMatch "\.(css|js)$">
         Header always set Cache-Control "public, max-age=86400"
     </FilesMatch>
 
@@ -89,11 +89,20 @@ Options -Indexes -MultiViews
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
-    # Matches the page as it stands: no <script>, no inline style=, no
-    # @font-face, all images and stylesheets same-origin. frame-ancestors
-    # supersedes X-Frame-Options in current browsers, so only one is set.
+    # Matches the page as it stands: every script, stylesheet and image is a
+    # same-origin file, so 'self' covers them without an 'unsafe-inline'
+    # escape hatch. frame-ancestors supersedes X-Frame-Options in current
+    # browsers, so only one is set.
     # NOTE: default-src 'none' will silently block any analytics snippet,
     # embedded font or external script added later — widen it in the same
-    # commit that adds one.
-    Header always set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    # commit that adds one. script-src is listed explicitly for the same
+    # reason: it does NOT fall back to default-src once it is present, so
+    # dropping it re-blocks theme-switcher.js.
+    # KNOWN GAP: index.html still carries one inline <style>, inside the
+    # <noscript> that hides the theme switcher. style-src 'self' blocks it,
+    # so a visitor with JS disabled sees the switcher and it does nothing.
+    # Costs nothing to anyone running JS, and is deliberately NOT fixed by
+    # adding 'unsafe-inline' — that would weaken the policy sitewide to
+    # paper over three declarations.
+    Header always set Content-Security-Policy "default-src 'none'; script-src 'self'; img-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 </IfModule>

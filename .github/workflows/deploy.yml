@@ -163,43 +163,72 @@ jobs:
           set -euo pipefail
           sleep 2
 
+          # `curl -fsS` dies with a bare "exit code 22" that names neither the
+          # URL nor the status, so a one-URL routing break reads as a totally
+          # opaque red X. Every fetch below goes through this instead.
+          fetch() {
+            local url="$1" dest="$2" code
+            code="$(curl -sS --max-time 20 -o "$dest" -w '%{http_code}' "$url")" || {
+              echo "::error::GET $url failed to complete (network/TLS)"; exit 1;
+            }
+            case "$code" in
+              2*) ;;
+              *) echo "::error::GET $url returned HTTP $code"
+                 echo "::error::if this is a 404 on a URL that exists in _deploy, the parent .htaccess does not route it — it only maps / and /assets/*"
+                 exit 1 ;;
+            esac
+          }
+
           # 1. Proves the bytes reached the live document root. rsync CREATES a
           #    missing destination rather than failing, so a mistyped target
           #    gives a green rsync AND a green homepage (the old files are
           #    untouched and still serving) with the site frozen forever.
           #    This is the only assertion that catches that.
-          got="$(curl -fsS --max-time 20 "$SITE/assets/BUILD")"
+          fetch "$SITE/assets/BUILD" /tmp/BUILD
+          got="$(cat /tmp/BUILD)"
           test "$got" = "$GITHUB_SHA" \
             || { echo "::error::live BUILD=$got, expected $GITHUB_SHA"; exit 1; }
 
           # 2. The homepage itself renders.
-          curl -fsS --max-time 20 "$SITE/" -o /tmp/index.html
+          fetch "$SITE/" /tmp/index.html
           grep -q 'danielius goriunovas' /tmp/index.html \
             || { echo "::error::homepage did not serve expected content"; exit 1; }
 
           # 3. The stylesheet the layout depends on is live and complete.
           #    Write to a file first: `curl | grep -q` SIGPIPEs curl under
           #    pipefail and reddens good deploys.
-          curl -fsS --max-time 20 "$SITE/assets/styles/tailwind.css" -o /tmp/tw.css
+          fetch "$SITE/assets/styles/tailwind.css" /tmp/tw.css
           grep -q 'subgrid' /tmp/tw.css \
             || { echo "::error::live tailwind.css is missing layout utilities"; exit 1; }
 
           # 4. reset.css landed
-          curl -fsS --max-time 20 "$SITE/assets/styles/reset.css" -o /tmp/reset.css
+          fetch "$SITE/assets/styles/reset.css" /tmp/reset.css
           test -s /tmp/reset.css \
             || { echo "::error::reset.css is empty or missing"; exit 1; }
 
           # 5. index.txt landed
-          curl -fsS --max-time 20 "$SITE/index.txt" -o /tmp/index.txt
+          fetch "$SITE/index.txt" /tmp/index.txt
           test -s /tmp/index.txt \
             || { echo "::error::index.txt is empty or missing"; exit 1; }
 
           # 6. Theme switcher script landed.
-          curl -fsS --max-time 20 "$SITE/assets/scripts/theme-switcher.js" -o /tmp/theme-switcher.js
+          fetch "$SITE/assets/scripts/theme-switcher.js" /tmp/theme-switcher.js
           grep -q 'input\[name="theme"\]' /tmp/theme-switcher.js \
             || { echo "::error::theme-switcher.js is missing expected content"; exit 1; }
 
-          # 7. .htaccess landed — without it the folder is reachable as a
+          # 7. ...and the CSP actually lets the browser run it. Serving the
+          #    file is only half the job: script-src does NOT inherit from
+          #    default-src 'none', so a policy that forgets it 404s nothing,
+          #    breaks no fetch, and fails only in the visitor's console.
+          csp="$(curl -sS --max-time 20 -o /dev/null -D - "$SITE/" \
+                  | tr -d '\r' | grep -i '^content-security-policy:' || true)"
+          case "$csp" in
+            *"script-src 'self'"*) ;;
+            "") echo "::error::no Content-Security-Policy header on $SITE/ — is mod_headers enabled?"; exit 1 ;;
+            *)  echo "::error::CSP lacks script-src 'self', so theme-switcher.js is blocked: $csp"; exit 1 ;;
+          esac
+
+          # 8. .htaccess landed — without it the folder is reachable as a
           #    duplicate of the site instead of redirecting.
           code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE/homepage/")"
           test "$code" = "301" \
