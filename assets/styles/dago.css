@@ -13,6 +13,7 @@
 body {
 	background: hsl(var(--black, #222));
 	color: hsl(var(--theme, #ffbf00));
+	accent-color: hsl(var(--theme, #ffbf00));
 	margin: 0 auto 0 0;
 	padding: 2em 1em;
 	font-family: monospace, "Courier New", Courier, sans-serif;
@@ -94,6 +95,23 @@ ol {
 
 :where(p, ul, ol) + :is(p, ul, ol) {
 	margin-top: 1.25em;
+}
+
+input {
+	&:is([type="radio"], [type="checkbox"]) {
+		width: 1em;
+		height: 1em;
+		vertical-align: middle;
+		cursor: pointer;
+	}
+}
+
+label:has(:is([type="radio"], [type="checkbox"])) {
+	cursor: pointer;
+}
+
+fieldset legend {
+	font-weight: bold;
 }
 
 a {
