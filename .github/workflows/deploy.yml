@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _deploy
-          mkdir -p _deploy/assets/styles _deploy/assets/img
+          mkdir -p _deploy/assets/styles _deploy/assets/img _deploy/assets/scripts
 
           # git archive ships only committed files, so untracked worktree cruft
           # can never leak into a deploy. The compiled stylesheet is the one
@@ -49,6 +49,7 @@ jobs:
           git show "$GITHUB_SHA:.htaccess"  > _deploy/.htaccess
           git show "$GITHUB_SHA:assets/styles/dago.css" > _deploy/assets/styles/dago.css
           git show "$GITHUB_SHA:assets/styles/reset.css" > _deploy/assets/styles/reset.css
+          git show "$GITHUB_SHA:assets/scripts/theme-switcher.js" > _deploy/assets/scripts/theme-switcher.js
 
           npm run build:tailwind
           cp assets/styles/tailwind.css _deploy/assets/styles/tailwind.css
@@ -65,7 +66,7 @@ jobs:
           done
 
           for f in .htaccess index.html index.txt assets/styles/dago.css \
-                   assets/styles/reset.css assets/styles/tailwind.css assets/img/dago-icon.png assets/BUILD; do
+                   assets/styles/reset.css assets/styles/tailwind.css assets/scripts/theme-switcher.js assets/img/dago-icon.png assets/BUILD; do
             test -f "_deploy/$f" || { echo "::error::missing $f"; exit 1; }
           done
 
@@ -193,7 +194,12 @@ jobs:
           test -s /tmp/index.txt \
             || { echo "::error::index.txt is empty or missing"; exit 1; }
 
-          # 6. .htaccess landed — without it the folder is reachable as a
+          # 6. Theme switcher script landed.
+          curl -fsS --max-time 20 "$SITE/assets/scripts/theme-switcher.js" -o /tmp/theme-switcher.js
+          grep -q 'input\[name="theme"\]' /tmp/theme-switcher.js \
+            || { echo "::error::theme-switcher.js is missing expected content"; exit 1; }
+
+          # 7. .htaccess landed — without it the folder is reachable as a
           #    duplicate of the site instead of redirecting.
           code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE/homepage/")"
           test "$code" = "301" \
