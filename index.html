@@ -23,6 +23,71 @@
 			<h1>
 				danielius goriunovas <span class="opacity-20 text-nowrap">// dago</span>
 			</h1>
+
+			<fieldset id="theme" class="print:hidden! fixed bottom-0 right-0 text-right text-xs py-2 px-4">
+				<legend>Išvaizda, pažaist:</legend>
+
+				<label><input type="radio" name="theme" value="dago" checked> dago</label>
+				<!-- <label><input type="radio" name="theme" value="console"> console</label> -->
+				<label><input type="radio" name="theme" value="print"> print</label>
+				<label><input type="radio" name="theme" value="txt"> .txt</label>
+			</fieldset>
+
+			<script>
+				const themeRadios = Array.from(document.querySelectorAll('input[name="theme"]'));
+
+				const resetTheme = () => {
+					document.body.className = 'dago';
+					localStorage.setItem('theme', 'dago');
+					themeRadios.forEach(radio => {
+						radio.checked = radio.value === 'dago';
+					});
+				};
+
+				const applyTheme = (theme) => {
+					document.body.className = theme;
+					localStorage.setItem('theme', theme);
+					themeRadios.forEach(radio => {
+						radio.checked = radio.value === theme;
+					});
+				};
+
+				themeRadios.forEach(radio => {
+					radio.addEventListener('change', () => {
+						if (radio.value === 'txt') {
+							applyTheme('dago');
+							window.location.assign(new URL('index.txt', window.location.href));
+							return;
+						}
+
+						if (radio.value === 'print') {
+							applyTheme('print');
+							window.addEventListener('afterprint', resetTheme, { once: true });
+							window.print();
+							return;
+						}
+
+						applyTheme(radio.value);
+					});
+				});
+
+				// hide 'print' if user can't print
+				const supportsPrint = typeof window.print === 'function';
+				if (!supportsPrint) {
+					const printRadio = document.querySelector('input[name="theme"][value="print"]');
+					if (printRadio) {
+						printRadio.parentElement.style.display = 'none';
+					}
+				}
+			</script>
+
+			<noscript>
+				<style>
+					#theme {
+						display: none;
+					}
+				</style>
+			</noscript>
 		</header>
 
 		<section id="projektai" class="content__section lg:col-span-2 print:hidden!">
@@ -201,8 +266,9 @@
 		<section id="cv" class="content__section lg:col-span-2 not-print:hidden! print:mb-2!">
 			<div class="content__section__body">
 				<p>
-					Dirbu prie kompų ir su intiku.<br> 
-					<span class="text-sm"><strong>labas<span class="before:content-['@']"></span>dago.lt</strong>, 10:00–22:00</span>
+					Dirbu prie kompų ir su intiku.<br>
+					<span class="text-sm"><strong>labas<span class="before:content-['@']"></span>dago.lt</strong>,
+						10:00–22:00</span>
 				</p>
 
 				<ul class="text-sm">
@@ -218,7 +284,8 @@
 
 		<footer>
 			<a href="https://notbyai.fyi" target="_blank" class="print-a-no-link">
-				<img src="assets/img/notbyai.png" srcset="assets/img/notbyai.png 1x, assets/img/notbyai@2x.png 2x" alt="Sukūrė žmogus, ne DI" width="132" height="43" />
+				<img src="assets/img/notbyai.png" srcset="assets/img/notbyai.png 1x, assets/img/notbyai@2x.png 2x"
+					alt="Sukūrė žmogus, ne DI" width="132" height="43" />
 			</a>
 		</footer>
 	</main>
