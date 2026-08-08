@@ -45,6 +45,7 @@ jobs:
           # exception: it is gitignored, so it is built and copied in below.
           git archive "$GITHUB_SHA:assets/img" | tar -x -C _deploy/assets/img
           git show "$GITHUB_SHA:index.html" > _deploy/index.html
+          git show "$GITHUB_SHA:index.txt"  > _deploy/index.txt
           git show "$GITHUB_SHA:.htaccess"  > _deploy/.htaccess
           git show "$GITHUB_SHA:assets/styles/dago.css" > _deploy/assets/styles/dago.css
           git show "$GITHUB_SHA:assets/styles/reset.css" > _deploy/assets/styles/reset.css
@@ -63,7 +64,7 @@ jobs:
               || { echo "::error::built tailwind.css is missing '$token' — source detection broke"; exit 1; }
           done
 
-          for f in .htaccess index.html assets/styles/dago.css \
+          for f in .htaccess index.html index.txt assets/styles/dago.css \
                    assets/styles/reset.css assets/styles/tailwind.css assets/img/dago-icon.png assets/BUILD; do
             test -f "_deploy/$f" || { echo "::error::missing $f"; exit 1; }
           done
@@ -187,7 +188,12 @@ jobs:
           test -s /tmp/reset.css \
             || { echo "::error::reset.css is empty or missing"; exit 1; }
 
-          # 5. .htaccess landed — without it the folder is reachable as a
+          # 5. index.txt landed
+          curl -fsS --max-time 20 "$SITE/index.txt" -o /tmp/index.txt
+          test -s /tmp/index.txt \
+            || { echo "::error::index.txt is empty or missing"; exit 1; }
+
+          # 6. .htaccess landed — without it the folder is reachable as a
           #    duplicate of the site instead of redirecting.
           code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE/homepage/")"
           test "$code" = "301" \
