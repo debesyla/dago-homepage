@@ -60,6 +60,16 @@ Options -Indexes -MultiViews
     </IfModule>
 </FilesMatch>
 
+# index.txt is UTF-8 on disk, but plain text has no in-band way to say so —
+# no meta tag, no @charset, and a BOM would be visible junk in a file whose
+# whole point is being clean. Without a charset= on the Content-Type the
+# browser falls back to a locale guess; observed in the wild picking
+# windows-1256, which renders "ų" as "إ³". index.html escapes this only
+# because it carries <meta charset>. Core directive, so no <IfModule> guard.
+# Scope is exactly text/plain and text/html: the deployed CSS and JS are pure
+# ASCII, and CSS defaults to UTF-8 anyway, so neither needs it.
+AddDefaultCharset utf-8
+
 <IfModule mod_headers.c>
     # The ?v= cache-busting stamp lives inside index.html, so the HTML itself
     # must always revalidate or a bumped stamp never reaches a returning
