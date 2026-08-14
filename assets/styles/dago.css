@@ -75,7 +75,7 @@ ol {
 	list-style-type: disc;
 
 	li {
-		& + li {
+		&+li {
 			margin-top: 0.375em;
 		}
 
@@ -93,7 +93,44 @@ ol {
 	}
 }
 
-:where(p, ul, ol) + :is(p, ul, ol) {
+code,
+pre {
+	background: hsl(var(--black, #222) / 0.65);
+}
+
+code {
+	padding: 0.1em 0.2em;
+}
+
+pre {
+	padding: 0.5em 1em;
+	overflow-x: auto;
+	border: 1px solid hsl(var(--theme, #ffbf00) / 0.35);
+	margin-top: 0.5em;
+}
+
+pre code {
+	padding: 0;
+	background: none;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+th,
+td {
+	border: 1px solid hsl(var(--theme, #ffbf00) / 0.35);
+	padding: 0.2em 0.4em;
+	text-align: left;
+}
+
+th {
+	background: hsl(var(--black, #222) / 0.65);
+}
+
+:where(p, ul, ol, pre)+ :is(p, ul, ol, pre) {
 	margin-top: 1.25em;
 }
 
@@ -134,12 +171,12 @@ a {
 	}
 
 	*,
-    *::before,
-    *::after {
-        background: transparent!important;
-        box-shadow: none!important;
-        text-shadow: none!important;
-    }
+	*::before,
+	*::after {
+		background: transparent !important;
+		box-shadow: none !important;
+		text-shadow: none !important;
+	}
 
 	a {
 		text-decoration: none;
@@ -147,40 +184,60 @@ a {
 
 	/* Show URLs in print */
 	a[href]::after {
-        content: " (" attr(href) ")";
-        font-size: 0.75em;
-        word-wrap: break-word; /* Prevents long URLs from overflowing the page */
-    }
+		content: " (" attr(href) ")";
+		font-size: 0.75em;
+		word-wrap: break-word;
+		/* Prevents long URLs from overflowing the page */
+	}
+
 	a[href].print-a-no-link::after,
 	a[href^="#"]::after,
-    a[href^="javascript:"]::after {
-        content: "";
-    }
+	a[href^="javascript:"]::after {
+		content: "";
+	}
 
 	/* Avoid page breaks inside certain elements, do not split them across pages */
-	blockquote, pre, img, tr, figure, li {
-        page-break-inside: avoid;
-        break-inside: avoid;
-    }
-	h1, h2, h3, h4, h5, h6 {
-        page-break-after: avoid;
-        break-after: avoid;
-    }
+	blockquote,
+	pre,
+	img,
+	tr,
+	figure,
+	li {
+		page-break-inside: avoid;
+		break-inside: avoid;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		page-break-after: avoid;
+		break-after: avoid;
+	}
 
 	/* Control orphans and widows */
-	p, h1, h2, h3, h4, h5, h6 {
+	p,
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
 		orphans: 3;
 		widows: 3;
 	}
 
 	/* Limit overflow */
-	img, svg {
-        max-width: 100%!important;
-    }
+	img,
+	svg {
+		max-width: 100% !important;
+	}
 
 	/* Set page margins for printing */
 	@page {
 		size: A4;
-        margin: 1cm;
-    }
+		margin: 1cm;
+	}
 }
