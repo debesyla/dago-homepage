@@ -65,8 +65,13 @@ jobs:
               || { echo "::error::built tailwind.css is missing '$token' — source detection broke"; exit 1; }
           done
 
+          # assets/img/og/ holds 1200x630 share cards for the network. Sites
+          # with no asset pipeline of their own (log.dago.lt uploads a single
+          # HTML file) point their og:image here, so losing one breaks another
+          # site's link previews — silently, since only crawlers fetch them.
           for f in .htaccess index.html index.txt assets/styles/dago.css \
-                   assets/styles/reset.css assets/styles/tailwind.css assets/scripts/theme-switcher.js assets/img/dago-icon.png assets/BUILD; do
+                   assets/styles/reset.css assets/styles/tailwind.css assets/scripts/theme-switcher.js assets/img/dago-icon.png assets/BUILD \
+                   assets/img/og/dago.lt.png assets/img/og/log.dago.lt.png; do
             test -f "_deploy/$f" || { echo "::error::missing $f"; exit 1; }
           done
 
